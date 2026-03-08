@@ -8,8 +8,6 @@ venv/
 ENV/
 env/
 # DB and Tokens
-*.db
-*.sqlite3
 tokens.json
 token.json
 user_agent.json
