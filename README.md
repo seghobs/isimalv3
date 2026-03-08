@@ -67,18 +67,23 @@ kontrls/
 
 ---
 
-## 🚀 Kurulum
+## 🚀 Kurulum (Tek Tıkla - PythonAnywhere & Linux)
 
-### 1. Gereksinimleri Yükleyin
+En kolay ve hatasız kurulum için sunucunuzun (PythonAnywhere) Bash Terminal ekranına girin ve aşağıdaki kodu kopyalayıp yapıştırıp "Enter" tuşuna basın:
 
 ```bash
-pip install flask requests
+bash <(curl -s https://raw.githubusercontent.com/seghobs/isimalv3/main/install.sh)
 ```
 
-### 2. Uygulamayı Başlatın
+**Bu komut ne yapar?**
+Tüm projeyi otomatik olarak Github'dan sunucunuza indirir, klasör izinlerini verir, otomatik kurulumları (Pip) gerçekleştirir ve sistem veri tabanını (SQLite) sizin için hazır konuma getirir.
+
+---
+
+### Yerel Ortamda (Kendi Bilgisayarınızda) Çalıştırma
 
 ```bash
-cd kontrls
+cd isimalv3
 python flask_app.py
 ```
 
