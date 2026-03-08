@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sonuçlar - DM Grup Analizi</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dm_result.css') }}">
+</head>
+
+<body>
+    <a href="/dm_analiz" class="back-btn">
+        <i class="fas fa-arrow-left"></i> Yeni Analiz
+    </a>
+
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-comments"></i> DM Grup Analizi Sonuçları</h1>
+            {% if date_str %}
+            <p><i class="fas fa-calendar"></i> {{ date_str }}</p>
+            {% endif %}
+        </div>
+
+        {% if error %}
+        <div class="error-box">
+            <i class="fas fa-exclamation-triangle"></i>
+            <p>{{ error }}</p>
+        </div>
+        <div class="action-buttons">
+            <a href="/dm_analiz" class="btn btn-primary">
+                <i class="fas fa-redo"></i> Tekrar Dene
+            </a>
+            <a href="/" class="btn">
+                <i class="fas fa-home"></i> Ana Sayfa
+            </a>
+        </div>
+        {% else %}
+
+        {% if results %}
+        <div class="results-header">
+            <h2><i class="fas fa-share-alt"></i> Paylaşımlar ({{ results|length }})</h2>
+            <button class="copy-btn" onclick="copyUsernames()">
+                <i class="fas fa-copy"></i> Kullanıcı Adlarını Kopyala
+            </button>
+        </div>
+
+        {% for result in results %}
+        <div class="result-card">
+            <div class="result-content">
+                {% if result.profile_picture and result.profile_picture != 'empty' %}
+                <img src="{{ url_for('main.profile_picture', url=result.profile_picture) }}" alt="Profile"
+                    class="profile-picture" onerror="this.style.display='none'">
+                {% else %}
+                <div class="profile-picture"
+                    style="background: rgba(102, 126, 234, 0.3); display: flex; align-items: center; justify-content: center;">
+                    <i class="fas fa-user" style="font-size: 32px; color: rgba(255, 255, 255, 0.5);"></i>
+                </div>
+                {% endif %}
+
+                <div class="result-info">
+                    <h3>
+                        <i class="fas fa-user-circle"></i>
+                        {% if result.username and result.username != 'empty' %}
+                        @{{ result.username }}
+                        {% else %}
+                        @{{ result.sender_username }}
+                        {% endif %}
+                    </h3>
+
+                    {% if result.sender_info %}
+                    <p>
+                        <i class="fas fa-share"></i>
+                        <strong>Kim Paylaştı:</strong> {{ result.sender_info }}
+                    </p>
+                    {% endif %}
+
+                    <p>
+                        <i class="fas fa-clock"></i>
+                        <strong>Paylaşım Saati:</strong>
+                        {{ result.item_date.strftime('%Y-%m-%d %H:%M:%S') }}
+                    </p>
+                </div>
+
+                <div class="result-actions">
+                    {% if result.short_code and result.short_code != 'empty' %}
+                    <a href="https://www.instagram.com/p/{{ result.short_code }}" target="_blank"
+                        class="btn btn-primary">
+                        <i class="fas fa-external-link-alt"></i> Paylaşımı Gör
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+
+        <div class="action-buttons">
+            <a href="/dm_analiz" class="btn btn-primary">
+                <i class="fas fa-redo"></i> Yeni Analiz
+            </a>
+            <a href="/" class="btn">
+                <i class="fas fa-home"></i> Ana Sayfa
+            </a>
+        </div>
+
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-inbox"></i>
+            <h3>Paylaşım Bulunamadı</h3>
+            <p>Bu tarihte seçilen grupta paylaşım bulunamadı.</p>
+        </div>
+
+        <div class="action-buttons">
+            <a href="/dm_analiz" class="btn btn-primary">
+                <i class="fas fa-search"></i> Yeni Arama Yap
+            </a>
+            <a href="/" class="btn">
+                <i class="fas fa-home"></i> Ana Sayfa
+            </a>
+        </div>
+        {% endif %}
+
+        {% endif %}
+    </div>
+
+    <script>
+        function copyUsernames() {
+            // Paylaşımı yapan kişilerin kullanıcı adlarını al
+            var usernames = [
+                {% for result in results %}
+        {% if result.sender_username and result.sender_username != 'empty' %}
+        '{{ result.sender_username }}'{% if not loop.last %}, {% endif %}
+        {% endif %}
+        {% endfor %}
+            ].filter(Boolean);
+
+        if (usernames.length === 0) {
+            alert('⚠️ Geçerli kullanıcı bulunamadı!');
+            return;
+        }
+
+        var text = usernames.join('\n');
+
+        // Samsung uyumlu kopyalama (fallback mekanizması)
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            // Modern API (Poco X3 Pro gibi telefonlar)
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = document.querySelector('.copy-btn');
+                const originalHTML = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-check"></i> Kopyalandı!';
+                btn.classList.add('copied');
+
+                setTimeout(() => {
+                    btn.innerHTML = originalHTML;
+                    btn.classList.remove('copied');
+                }, 2000);
+            }).catch(err => {
+                console.log('Modern API başarısız, eski metod deneniyor...', err);
+                // Eski metod ile tekrar dene (Samsung A25 için)
+                fallbackCopyTextToClipboard(text);
+            });
+        } else {
+            // Eski metod (Samsung Internet Browser için)
+            fallbackCopyTextToClipboard(text);
+        }
+        }
+
+        // Samsung ve eski tarayıcılar için fallback fonksiyonu
+        function fallbackCopyTextToClipboard(text) {
+            var textArea = document.createElement('textarea');
+            textArea.value = text;
+
+            // Ekrandan gizle
+            textArea.style.position = 'fixed';
+            textArea.style.top = '0';
+            textArea.style.left = '0';
+            textArea.style.width = '2em';
+            textArea.style.height = '2em';
+            textArea.style.padding = '0';
+            textArea.style.border = 'none';
+            textArea.style.outline = 'none';
+            textArea.style.boxShadow = 'none';
+            textArea.style.background = 'transparent';
+            textArea.style.opacity = '0';
+
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+
+            try {
+                var successful = document.execCommand('copy');
+
+                if (successful) {
+                    const btn = document.querySelector('.copy-btn');
+                    const originalHTML = btn.innerHTML;
+                    btn.innerHTML = '<i class="fas fa-check"></i> Kopyalandı!';
+                    btn.classList.add('copied');
+
+                    setTimeout(() => {
+                        btn.innerHTML = originalHTML;
+                        btn.classList.remove('copied');
+                    }, 2000);
+                } else {
+                    alert('Kopyalama başarısız! Tarayıcınız desteklemiyor.');
+                }
+            } catch (err) {
+                console.error('Fallback kopyalama başarısız:', err);
+                alert('Kopyalama başarısız: ' + err.message);
+            }
+
+            document.body.removeChild(textArea);
+        }
+    </script>
+</body>
+
+</html>

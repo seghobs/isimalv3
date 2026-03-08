@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instagram Post Kontrol</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/form.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-12 col-md-10 col-lg-8 col-xl-6">
+                <div class="form-card">
+                    <h2><i class="fas fa-comments me-2"></i>Yorum Kontrolleri</h2>
+                    <form method="post" action="/">
+                        <div class="mb-3">
+                            <label for="post_link" class="form-label">
+                                <i class="fab fa-instagram me-2"></i>İnstagram Post Linki
+                            </label>
+                            <input type="text" id="post_link" name="post_link" class="form-control" 
+                                   placeholder="https://www.instagram.com/p/..." required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="grup_uye" class="form-label">
+                                <i class="fas fa-users me-2"></i>Grup Üye Listesi
+                            </label>
+                            <textarea id="grup_uye" name="grup_uye" class="form-control" 
+                                      placeholder="Her satıra bir kullanıcı adı yazın" 
+                                      oninput="updateUserCount()" required></textarea>
+                            <span id="user_count">0 Adet kullanıcı eklendi.</span>
+                        </div>
+                        <div class="mb-4">
+                            <label for="izinliler" class="form-label">
+                                <i class="fas fa-user-check me-2"></i>İzin İsteyenler Listesi
+                            </label>
+                            <textarea id="izinliler" name="izinliler" class="form-control" 
+                                      placeholder="Her satıra bir kullanıcı adı yazın"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100 mb-3">
+                            <i class="fas fa-search me-2"></i>Kontrol Et
+                        </button>
+                    </form>
+                    <button onclick="location.href='token_al'" class="btn btn-secondary w-100 mb-2">
+                        <i class="fas fa-key me-2"></i>Token Al
+                    </button>
+                    <button onclick="location.href='admin'" class="btn btn-admin w-100">
+                        <i class="fas fa-lock me-2"></i>Admin Panel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/form.js') }}"></script>
+</body>
+</html>

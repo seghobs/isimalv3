@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sonuçlar - Beğeni Analizi</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/begeni_result.css') }}">
+</head>
+<body>
+    <a href="/begeni_analiz" class="back-btn">
+        <i class="fas fa-arrow-left"></i> Yeni Analiz
+    </a>
+    
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-heart"></i> Beğeni Analizi Sonuçları</h1>
+        </div>
+        
+        {% if error %}
+        <div class="error-box">
+            <i class="fas fa-exclamation-triangle"></i>
+            <p>{{ error }}</p>
+        </div>
+        <div class="action-buttons">
+            <a href="/begeni_analiz" class="btn btn-primary">
+                <i class="fas fa-redo"></i> Tekrar Dene
+            </a>
+            <a href="/" class="btn">
+                <i class="fas fa-home"></i> Ana Sayfa
+            </a>
+        </div>
+        {% else %}
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="icon"><i class="fas fa-users"></i></div>
+                <div class="number">{{ group_total }}</div>
+                <div class="label">Grup Üyesi</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="icon"><i class="fas fa-heart"></i></div>
+                <div class="number">{{ liked_count }}</div>
+                <div class="label">Beğenen</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="icon"><i class="fas fa-heart-broken"></i></div>
+                <div class="number">{{ not_liked|length }}</div>
+                <div class="label">Beğenmeyen</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="icon"><i class="fas fa-thumbs-up"></i></div>
+                <div class="number">{{ total_likes }}</div>
+                <div class="label">Toplam Beğeni</div>
+            </div>
+        </div>
+        
+        <div class="results-container">
+            {% if not_liked %}
+            <div class="results-header">
+                <h2><i class="fas fa-heart-broken"></i> Beğenmeyenler ({{ not_liked|length }})</h2>
+                <button class="copy-btn" onclick="copyToClipboard()">
+                    <i class="fas fa-copy"></i> Kopyala
+                </button>
+            </div>
+            
+            <div class="user-list" id="userList">
+                {% for user in not_liked %}
+                <div class="user-item">
+                    <i class="fas fa-user"></i>
+                    <span>@{{ user }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <i class="fas fa-check-circle"></i>
+                <h3>Harika! 🎉</h3>
+                <p>Grup üyelerinizin hepsi gönderiyi beğenmiş!</p>
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="action-buttons">
+            <a href="/begeni_analiz" class="btn btn-primary">
+                <i class="fas fa-redo"></i> Yeni Analiz
+            </a>
+            <a href="/" class="btn">
+                <i class="fas fa-home"></i> Ana Sayfa
+            </a>
+        </div>
+        
+        {% endif %}
+    </div>
+    
+    <script src="{{ url_for('static', filename='js/begeni_result.js') }}"></script>
+</body>
+</html>
