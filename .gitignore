@@ -7,8 +7,7 @@ __pycache__/
 venv/
 ENV/
 env/
-# DB and Tokens
+# Eski token dosyaları (artık kullanılmıyor)
 tokens.json
 token.json
-user_agent.json
 .DS_Store

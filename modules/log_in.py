@@ -138,11 +138,8 @@ def giris_yap(username, password):
     
     try:
         yeni = response.json()
-        print("Response JSON:")
-        print(json.dumps(yeni, indent=2, ensure_ascii=False))
     except Exception as e:
         print(f"JSON Parse Hatası: {e}")
-        print(f"Response Text: {response.text}")
         return None, android_id_yeni, selected_user_agent
 
     # Bearer token'ını bulmak için fonksiyon
@@ -169,16 +166,10 @@ def giris_yap(username, password):
     # Bearer token'ı bulma
     bearer_token = find_bearer_token(yeni)
 
-    # Sonucu yazdırma
-    print(f"\n=== BULUNAN BEARER TOKEN ===")
-    print(f"Token: {bearer_token}")
-    print(f"Android ID: {android_id_yeni}")
-    print(f"User Agent: {selected_user_agent}")
-    print("=" * 50)
-    
-    if not bearer_token:
-        print("\n[HATA] Token bulunamadı! Response'da token yok olabilir.")
-        print("Lütfen response JSON'ı kontrol edin.\n")
+    if bearer_token:
+        print(f"Token alındı: @{username} | Android ID: {android_id_yeni[:8]}...")
+    else:
+        print(f"[HATA] Token bulunamadı: @{username}")
 
     # JSON dosyasına kaydetme iptal edildi (artık auth tokens.json üzerinden yapılıyor)
     # token_file = os.path.join(os.path.dirname(__file__), 'token.json')
