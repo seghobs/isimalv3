@@ -171,9 +171,4 @@ def giris_yap(username, password):
     else:
         print(f"[HATA] Token bulunamadı: @{username}")
 
-    # JSON dosyasına kaydetme iptal edildi (artık auth tokens.json üzerinden yapılıyor)
-    # token_file = os.path.join(os.path.dirname(__file__), 'token.json')
-    # with open(token_file, 'w', encoding='utf-8') as f:
-    #     json.dump({"token": bearer_token, "android_id_yeni": android_id_yeni, "user_agent": selected_user_agent}, f, ensure_ascii=False, indent=2)
-
-    return bearer_token, android_id_yeni,selected_user_agent
+    return bearer_token, android_id_yeni, selected_user_agent, random_uuid_str

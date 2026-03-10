@@ -39,10 +39,9 @@ def get_comment_usernames(media_id):
     while retry_count < max_retries:
         current_token = current_account.get('token', '')
         android_id = current_account.get('android_id') or current_account.get('android_id_yeni', '')
+        device_id = current_account.get('device_id', '')
         current_user_agent = current_account.get('user_agent', '')
         current_username = current_account.get('username', 'bilinmeyen')
-
-        print(f"Yorum çekme - Token kullanılıyor: @{current_username}")
 
         headers = {
             'authorization': current_token,
@@ -50,6 +49,7 @@ def get_comment_usernames(media_id):
             'x-ig-app-locale': 'tr_TR',
             'x-ig-device-locale': 'tr_TR',
             'x-ig-mapped-locale': 'tr_TR',
+            'x-ig-device-id': device_id,
             'x-ig-android-id': f'android-{android_id}',
             'x-ig-app-id': '567067343352427',
             'x-ig-capabilities': '3brTv10=',
@@ -183,6 +183,7 @@ def get_likers(media_id):
     while retry_count < max_retries:
         current_token = current_account.get('token', '')
         android_id = current_account.get('android_id') or current_account.get('android_id_yeni', '')
+        device_id = current_account.get('device_id', '')
         current_user_agent = current_account.get('user_agent', '')
         current_username = current_account.get('username', 'bilinmeyen')
 
@@ -192,6 +193,7 @@ def get_likers(media_id):
             'accept-language': 'tr-TR, en-US',
             'authorization': current_token,
             'x-ig-app-id': '567067343352427',
+            'x-ig-device-id': device_id,
             'x-ig-android-id': f'android-{android_id}',
             'user-agent': current_user_agent,
             'x-fb-http-engine': 'Liger',

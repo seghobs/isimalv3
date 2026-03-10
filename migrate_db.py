@@ -19,6 +19,7 @@ def migrate():
         token TEXT,
         android_id TEXT,
         android_id_yeni TEXT,
+        device_id TEXT,
         user_agent TEXT,
         login_date TEXT,
         last_check TEXT,

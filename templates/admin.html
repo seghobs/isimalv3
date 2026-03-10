@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="tr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,19 +8,21 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>Admin Panel - Çoklu Token Yönetimi</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
 </head>
+
 <body>
     <div class="container">
         <div class="header">
             <h1><i class="fas fa-shield-alt"></i> Token Yönetim Paneli</h1>
             <a href="/admin/logout" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Çıkış Yap</a>
         </div>
-        
+
         <div id="alertContainer"></div>
-        
+
         <div class="add-token-section">
             <h2><i class="fas fa-plus-circle"></i> Yeni Token Ekle</h2>
             <p style="color: rgba(255, 255, 255, 0.7); font-size: 14px; margin-bottom: 15px;">
@@ -30,30 +33,44 @@
                     <label for="token"><i class="fas fa-key"></i> Token (Bearer Token)</label>
                     <textarea id="token" name="token" required placeholder="Bearer IGT:2:..."></textarea>
                 </div>
-                
+
                 <div class="form-group">
                     <label for="android_id"><i class="fas fa-mobile-alt"></i> Android ID</label>
                     <input type="text" id="android_id" name="android_id" required placeholder="3724108ca33e7977">
                 </div>
-                
+
+                <div class="form-group">
+                    <label for="device_id"><i class="fas fa-fingerprint"></i> Device ID (UUID) <small
+                            style="color:rgba(255,255,255,0.4);">(Opsiyonel)</small></label>
+                    <input type="text" id="device_id" name="device_id"
+                        placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
+                    <small style="color: rgba(255, 255, 255, 0.5); font-size: 12px; display: block; margin-top: 5px;">
+                        <i class="fas fa-info-circle"></i> Boş bırakırsanız otomatik UUID oluşturulur. Hesabın gerçek
+                        Device ID'sini girin.
+                    </small>
+                </div>
+
                 <div class="form-group">
                     <label for="user_agent"><i class="fas fa-browser"></i> User Agent</label>
-                    <textarea id="user_agent" name="user_agent" required placeholder="Instagram 321.0.0.34.111..."></textarea>
+                    <textarea id="user_agent" name="user_agent" required
+                        placeholder="Instagram 321.0.0.34.111..."></textarea>
                 </div>
-                
+
                 <div class="form-group">
                     <label for="password"><i class="fas fa-lock"></i> Şifre (Opsiyonel)</label>
                     <input type="password" id="password" name="password" placeholder="Şifrenizi girin (opsiyonel)">
                     <small style="color: rgba(255, 255, 255, 0.5); font-size: 12px; display: block; margin-top: 5px;">
-                        <i class="fas fa-info-circle"></i> Şifre kaydederseniz 'Tekrar Giriş Yap' butonu ile otomatik token yenileyebilirsiniz.<br>
-                        <i class="fas fa-lightbulb"></i> <strong>Not:</strong> /token_al sayfasından giriş yaparsanız şifre otomatik kaydedilir.
+                        <i class="fas fa-info-circle"></i> Şifre kaydederseniz 'Tekrar Giriş Yap' butonu ile otomatik
+                        token yenileyebilirsiniz.<br>
+                        <i class="fas fa-lightbulb"></i> <strong>Not:</strong> /token_al sayfasından giriş yaparsanız
+                        şifre otomatik kaydedilir.
                     </small>
                 </div>
-                
+
                 <button type="submit" class="btn"><i class="fas fa-save"></i> Token Ekle</button>
             </form>
         </div>
-        
+
         <div class="tokens-list">
             <h2><i class="fas fa-list"></i> Token Listesi</h2>
             <div class="loading" id="loading">
@@ -63,7 +80,7 @@
             <div id="tokensList"></div>
         </div>
     </div>
-    
+
     <!-- Düzenleme Modalı -->
     <div id="editModal" class="modal">
         <div class="modal-content">
@@ -71,38 +88,51 @@
                 <h2><i class="fas fa-edit"></i> Token Düzenle</h2>
                 <button class="modal-close" onclick="closeEditModal()">×</button>
             </div>
-            
+
             <form id="editTokenForm">
                 <input type="hidden" id="edit_username">
-                
+
                 <div class="form-group">
                     <label><i class="fas fa-user"></i> Kullanıcı Adı</label>
                     <input type="text" id="edit_username_display" disabled style="opacity: 0.6;">
                 </div>
-                
+
                 <div class="form-group">
                     <label for="edit_token"><i class="fas fa-key"></i> Token (Bearer Token)</label>
                     <textarea id="edit_token" name="token" required placeholder="Bearer IGT:2:..."></textarea>
                 </div>
-                
+
                 <div class="form-group">
                     <label for="edit_android_id"><i class="fas fa-mobile-alt"></i> Android ID</label>
                     <input type="text" id="edit_android_id" name="android_id" required placeholder="3724108ca33e7977">
                 </div>
-                
+
+                <div class="form-group">
+                    <label for="edit_device_id"><i class="fas fa-fingerprint"></i> Device ID (UUID) <small
+                            style="color:rgba(255,255,255,0.4);">(Opsiyonel)</small></label>
+                    <input type="text" id="edit_device_id" name="device_id"
+                        placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
+                    <small style="color: rgba(255, 255, 255, 0.5); font-size: 12px; display: block; margin-top: 5px;">
+                        <i class="fas fa-info-circle"></i> Boş bırakırsanız mevcut değer korunur.
+                    </small>
+                </div>
+
                 <div class="form-group">
                     <label for="edit_user_agent"><i class="fas fa-browser"></i> User Agent</label>
-                    <textarea id="edit_user_agent" name="user_agent" required placeholder="Instagram 321.0.0.34.111..."></textarea>
+                    <textarea id="edit_user_agent" name="user_agent" required
+                        placeholder="Instagram 321.0.0.34.111..."></textarea>
                 </div>
-                
+
                 <div style="display: flex; gap: 10px;">
                     <button type="submit" class="btn"><i class="fas fa-save"></i> Kaydet</button>
-                    <button type="button" class="btn btn-danger" onclick="closeEditModal()"><i class="fas fa-times"></i> İptal</button>
+                    <button type="button" class="btn btn-danger" onclick="closeEditModal()"><i class="fas fa-times"></i>
+                        İptal</button>
                 </div>
             </form>
         </div>
     </div>
-    
+
     <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
 </body>
+
 </html>

@@ -1,4 +1,5 @@
 import sqlite3
+import uuid
 import os
 from curl_cffi import requests as req
 
@@ -16,6 +17,13 @@ def dict_factory(cursor, row):
 def get_connection():
     conn = sqlite3.connect(DB_FILE)
     conn.row_factory = dict_factory
+    # device_id sütunu yoksa ekle (eski DB'ler için migration)
+    try:
+        c = conn.cursor()
+        c.execute("ALTER TABLE accounts ADD COLUMN device_id TEXT")
+        conn.commit()
+    except sqlite3.OperationalError:
+        pass  # Sütun zaten var
     return conn
 
 def load_tokens():
@@ -37,7 +45,6 @@ def save_tokens(tokens):
         conn = get_connection()
         c = conn.cursor()
         
-        # Eğer sözlük formatında ('accounts') geldiyse ayıkla
         if isinstance(tokens, dict) and 'accounts' in tokens:
             tokens_list = tokens['accounts']
         elif not isinstance(tokens, list):
@@ -48,10 +55,13 @@ def save_tokens(tokens):
         c.execute("DELETE FROM accounts")
         
         for acc in tokens_list:
+            # device_id yoksa otomatik üret (mevcut hesaplar için)
+            device_id = acc.get('device_id') or str(uuid.uuid4())
+            
             c.execute('''
                 INSERT INTO accounts 
-                (id, username, password, full_name, token, android_id, android_id_yeni, user_agent, login_date, last_check, is_active, is_valid, logout_reason, logout_time, added_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                (id, username, password, full_name, token, android_id, android_id_yeni, device_id, user_agent, login_date, last_check, is_active, is_valid, logout_reason, logout_time, added_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (
                 acc.get('id'),
                 acc.get('username'),
@@ -60,6 +70,7 @@ def save_tokens(tokens):
                 acc.get('token'),
                 acc.get('android_id', acc.get('android_id_yeni', '')),
                 acc.get('android_id_yeni', acc.get('android_id', '')),
+                device_id,
                 acc.get('user_agent'),
                 acc.get('login_date'),
                 acc.get('last_check'),

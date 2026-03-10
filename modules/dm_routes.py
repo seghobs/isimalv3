@@ -54,11 +54,12 @@ def dm_analiz():
             try:
                 # Şu anki token ile headers oluştur
                 android_id = current_account.get('android_id') or current_account.get('android_id_yeni', '')
+                device_id = current_account.get('device_id', '')
                 current_headers = {
                     'x-ig-app-locale': 'tr_TR',
                     'x-ig-device-locale': 'tr_TR',
                     'x-ig-mapped-locale': 'tr_TR',
-                    'x-ig-device-id': '33337356-a663-4d42-9983-6a449cd6f963',
+                    'x-ig-device-id': device_id,
                     'x-ig-android-id': f'android-{android_id}',
                     'x-ig-timezone-offset': '10800',
                     'x-ig-nav-chain': 'MainFeedFragment:feed_timeline:1:cold_start:1717775982.957::',

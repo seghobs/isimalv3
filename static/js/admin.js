@@ -98,6 +98,10 @@ function showAlert(message, type = 'success') {
                 </div>
                 
                 <div class="token-info">
+                    <strong>Device ID:</strong> <span class="token-value" style="display: inline-block;">${token.device_id || '<em style="color:rgba(255,255,255,0.4)">Yok (otomatik atanır)</em>'}</span>
+                </div>
+                
+                <div class="token-info">
                     <strong>Eklenme Tarihi:</strong> ${token.added_at ? new Date(token.added_at).toLocaleString('tr-TR') : 'Bilinmiyor'}
                 </div>
                 
@@ -210,6 +214,7 @@ function showAlert(message, type = 'success') {
             const formData = {
                 token: document.getElementById('token').value.trim(),
                 android_id: document.getElementById('android_id').value.trim(),
+                device_id: document.getElementById('device_id').value.trim(),
                 user_agent: document.getElementById('user_agent').value.trim(),
                 password: document.getElementById('password').value.trim(),
                 is_active: true,
@@ -303,6 +308,7 @@ function showAlert(message, type = 'success') {
                 document.getElementById('edit_username_display').value = '@' + token.username + (token.full_name ? ' (' + token.full_name + ')' : '');
                 document.getElementById('edit_token').value = token.token;
                 document.getElementById('edit_android_id').value = token.android_id_yeni;
+                document.getElementById('edit_device_id').value = token.device_id || '';
                 document.getElementById('edit_user_agent').value = token.user_agent;
                 
                 // Modalı aç
@@ -341,6 +347,7 @@ function showAlert(message, type = 'success') {
                 username: username,
                 token: document.getElementById('edit_token').value.trim(),
                 android_id: document.getElementById('edit_android_id').value.trim(),
+                device_id: document.getElementById('edit_device_id').value.trim(),
                 user_agent: document.getElementById('edit_user_agent').value.trim()
             };
             

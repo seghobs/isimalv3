@@ -73,7 +73,7 @@ class TokenManager:
         try:
             if auto_login:
                 # Instagram'a giriş yap
-                token, android_id, user_agent = giris_yap(username, password)
+                token, android_id, user_agent, device_id = giris_yap(username, password)
                 
                 if not token:
                     return {"success": False, "error": "Token alınamadı"}
@@ -114,7 +114,8 @@ class TokenManager:
                 "password": password,
                 "token": token,
                 "android_id": android_id,
-                "android_id_yeni": android_id,  # Kontrls uyumluluk
+                "android_id_yeni": android_id,
+                "device_id": device_id,
                 "user_agent": user_agent,
                 "login_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 "last_check": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -289,7 +290,7 @@ class TokenManager:
             return {"success": False, "error": "Hesap bulunamadı"}
         
         try:
-            token, android_id, user_agent = giris_yap(
+            token, android_id, user_agent, device_id = giris_yap(
                 account["username"],
                 account["password"]
             )
@@ -302,7 +303,8 @@ class TokenManager:
                 if acc["id"] == account_id:
                     acc["token"] = token
                     acc["android_id"] = android_id
-                    acc["android_id_yeni"] = android_id  # Kontrls uyumluluk
+                    acc["android_id_yeni"] = android_id
+                    acc["device_id"] = device_id
                     acc["user_agent"] = user_agent
                     acc["login_date"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                     acc["last_check"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")

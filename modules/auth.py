@@ -15,7 +15,7 @@ def giris():
     if request.method == 'POST':
         kullanici_adi = request.form['kullanici_adi']
         sifre = request.form['sifre']
-        token_degeri, androidid, user_agent = giris_yap(kullanici_adi, sifre)
+        token_degeri, androidid, user_agent, device_id = giris_yap(kullanici_adi, sifre)
 
         print("Sonuç:", token_degeri, androidid)
         
@@ -36,6 +36,7 @@ def giris():
                     existing_token['password'] = sifre
                     existing_token['token'] = token_degeri
                     existing_token['android_id_yeni'] = androidid
+                    existing_token['device_id'] = device_id
                     existing_token['user_agent'] = user_agent
                     existing_token['is_active'] = True
                     existing_token['is_valid'] = True
@@ -67,6 +68,7 @@ def giris():
                         'password': sifre,
                         'token': token_degeri,
                         'android_id_yeni': androidid,
+                        'device_id': device_id,
                         'user_agent': user_agent,
                         'is_active': True,
                         'is_valid': True,

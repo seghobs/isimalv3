@@ -116,9 +116,10 @@ def add_token():
         new_token = {
             'username': username,
             'full_name': full_name,
-            'password': data.get('password', ''),  # Şifre kaydediliyor
+            'password': data.get('password', ''),
             'token': data['token'],
             'android_id_yeni': data['android_id'],
+            'device_id': data.get('device_id', ''),  # Manuel girilen device_id
             'user_agent': data['user_agent'],
             'is_active': data.get('is_active', True),
             'is_valid': True,
@@ -246,6 +247,8 @@ def update_token():
             if token['username'] == username:
                 token['token'] = data['token']
                 token['android_id_yeni'] = data['android_id']
+                if data.get('device_id'):  # Eğer yeni device_id girilmişse güncelle
+                    token['device_id'] = data['device_id']
                 token['user_agent'] = data['user_agent']
                 
                 # Yeni token'ı doğrula ve asıl kullanıcı adını çekerek veriyi düzelt
@@ -336,7 +339,7 @@ def relogin_token():
         
         # Tekrar giriş yap
         try:
-            new_token, new_android_id, new_user_agent = giris_yap(username, target_token['password'])
+            new_token, new_android_id, new_user_agent, new_device_id = giris_yap(username, target_token['password'])
             
             if not new_token:
                 return jsonify({
@@ -347,6 +350,7 @@ def relogin_token():
             # Token'ı güncelle
             target_token['token'] = new_token
             target_token['android_id_yeni'] = new_android_id
+            target_token['device_id'] = new_device_id
             target_token['user_agent'] = new_user_agent
             target_token['is_active'] = True  # Otomatik aktif yap
             target_token['is_valid'] = True
