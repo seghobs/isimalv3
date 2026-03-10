@@ -13,47 +13,63 @@ def ana_sayfa():
 @auth_bp.route('/giris_yaps', methods=['POST'])
 def giris():
     if request.method == 'POST':
-        kullanici_adi = request.form['kullanici_adi']
-        sifre = request.form['sifre']
-        token_degeri, androidid, user_agent, device_id = giris_yap(kullanici_adi, sifre)
+        kullanici_adi = request.form.get('kullanici_adi', '').strip()
+        sifre = request.form.get('sifre', '').strip()
 
-        print("Sonuç:", token_degeri, androidid)
-        
-        # Token başarılıysa tokens.json'a ekle/güncelle
+        # Kullanıcının girdiği cihaz kimliği değerleri
+        device_id  = request.form.get('device_id', '').strip()
+        android_id = request.form.get('android_id', '').strip()
+        user_agent = request.form.get('user_agent', '').strip()
+
+        if not all([kullanici_adi, sifre, device_id, android_id, user_agent]):
+            return jsonify({
+                "success": False,
+                "message": "kullanici_adi, sifre, device_id, android_id ve user_agent zorunludur"
+            }), 400
+
+        # Giriş yap — cihaz kimliğini dışarıdan ver
+        token_degeri, _android, _ua, _device = giris_yap(
+            kullanici_adi, sifre,
+            device_id=device_id,
+            android_id=android_id,
+            user_agent=user_agent
+        )
+
+        print("Sonuç:", token_degeri, android_id)
+
         if token_degeri:
             try:
                 tokens = load_tokens()
-                
-                # Aynı kullanıcı adı varsa güncelle, yoksa ekle
+
                 existing_token = None
                 for token in tokens:
                     if token['username'] == kullanici_adi:
                         existing_token = token
                         break
-                
+
                 if existing_token:
-                    # Mevcut token'ı güncelle
+                    # Mevcut hesap — sadece token'ı güncelle, CİHAZ KİMLİĞİNİ KORU
+                    # (kullanıcı açıkça yeni değer girmişse güncelle, boşsa eskiyi tut)
                     existing_token['password'] = sifre
-                    existing_token['token'] = token_degeri
-                    existing_token['android_id_yeni'] = androidid
-                    existing_token['device_id'] = device_id
-                    existing_token['user_agent'] = user_agent
+                    existing_token['token']    = token_degeri
+                    existing_token['android_id_yeni'] = android_id or existing_token.get('android_id_yeni', android_id)
+                    existing_token['android_id']      = android_id or existing_token.get('android_id', android_id)
+                    existing_token['device_id']       = device_id  or existing_token.get('device_id', device_id)
+                    existing_token['user_agent']      = user_agent or existing_token.get('user_agent', user_agent)
                     existing_token['is_active'] = True
-                    existing_token['is_valid'] = True
-                    # Logout bilgilerini temizle
+                    existing_token['is_valid']  = True
                     existing_token.pop('logout_reason', None)
                     existing_token.pop('logout_time', None)
                     print(f"Token güncellendi: @{kullanici_adi}")
                 else:
-                    # Yeni token ekle
-                    # Önce kullanıcı bilgilerini al
+                    # Yeni hesap — tam bilgi ekle
                     try:
                         headers = {
                             'authorization': token_degeri,
                             'user-agent': user_agent,
                             'x-ig-app-id': '567067343352427',
                         }
-                        response = req.get('https://i.instagram.com/api/v1/accounts/current_user/?edit=true', 
+                        response = req.get('https://i.instagram.com/api/v1/accounts/current_user/?edit=true',
                                           headers=headers, timeout=10, impersonate="chrome110")
                         full_name = ''
                         if response.status_code == 200:
@@ -61,24 +77,32 @@ def giris():
                             full_name = user_data.get('full_name', '')
                     except:
                         full_name = ''
-                    
+
                     new_token = {
-                        'username': kullanici_adi,
-                        'full_name': full_name,
-                        'password': sifre,
-                        'token': token_degeri,
-                        'android_id_yeni': androidid,
-                        'device_id': device_id,
-                        'user_agent': user_agent,
-                        'is_active': True,
-                        'is_valid': True,
-                        'added_at': str(datetime.now())
+                        'username':      kullanici_adi,
+                        'full_name':     full_name,
+                        'password':      sifre,
+                        'token':         token_degeri,
+                        'android_id_yeni': android_id,
+                        'android_id':    android_id,
+                        'device_id':     device_id,
+                        'user_agent':    user_agent,
+                        'is_active':     True,
+                        'is_valid':      True,
+                        'added_at':      str(datetime.now())
                     }
                     tokens.append(new_token)
                     print(f"Yeni token eklendi: @{kullanici_adi}")
-                
+
                 save_tokens(tokens)
             except Exception as e:
                 print(f"Token kaydetme hatası: {e}")
 
-        return jsonify({"token": token_degeri, "android_id_yeni": androidid, "user_agent": user_agent})
+        return jsonify({
+            "success": bool(token_degeri),
+            "token": token_degeri,
+            "android_id": android_id,
+            "device_id": device_id,
+            "user_agent": user_agent
+        })
+

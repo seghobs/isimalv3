@@ -1,11 +1,13 @@
 from flask import Blueprint, request, render_template
 from datetime import datetime, timedelta
 import time
+import logging
 from curl_cffi import requests
 from modules.token_manager import token_manager
 from modules.profil_sorgula import profili_sorgula
 
 dm_bp = Blueprint('dm', __name__)
+logger = logging.getLogger(__name__)
 
 @dm_bp.route('/dm_analiz', methods=['GET', 'POST'])
 def dm_analiz():
@@ -95,10 +97,12 @@ def dm_analiz():
                 if response.status_code in [401, 403]:
                     print(f"Token geçersiz: @{current_account['username']} - Sonraki token'a geçiliyor")
                     # Token'ı geçersiz olarak işaretle
-                    token_manager.validate_token(current_account['id'])
+                    if current_account:
+                        token_manager.validate_token(current_account['id'])
                     
                     # Sonraki token'a geç
-                    current_account = token_manager.get_next_valid_token(current_account['id'])
+                    current_id = current_account['id'] if current_account else None
+                    current_account = token_manager.get_next_valid_token(current_id)
                     if not current_account:
                         return render_template('dm_result.html', error='Tüm tokenlar geçersiz! Lütfen admin panelinden tokenları yenileyin.')
                     
@@ -112,7 +116,8 @@ def dm_analiz():
             except requests.errors.RequestsError as e:
                 print(f"İstek hatası: {e}")
                 # Sonraki token'a geç
-                current_account = token_manager.get_next_valid_token(current_account['id'])
+                current_id = current_account['id'] if current_account else None
+                current_account = token_manager.get_next_valid_token(current_id)
                 if not current_account:
                     return render_template('dm_result.html', error='İstek başarısız ve yedek token bulunamadı.')
                 retry_count += 1
@@ -120,6 +125,9 @@ def dm_analiz():
         
         if not response or response.status_code != 200:
             return render_template('dm_result.html', error='API isteği başarısız oldu. Tüm tokenlar denendi.')
+
+        if not current_account:
+            return render_template('dm_result.html', error='Aktif token bulunamadı.')
 
         json_data = response.json()
 
@@ -214,11 +222,11 @@ def dm_analiz():
                                     })
                             else:
                                 print(f"Profil alınamadı, atlanıyor: {user_id_}")
-                        except Exception as e:
-                            print(f"Profil sorgulama hatası, atlanıyor ({user_id_}): {e}")
+                        except Exception:
+                            logger.exception("Profil sorgulama hatasi, atlandi (user_id=%s)", user_id_)
 
-            except Exception as e:
-                print(f"Item işleme hatası: {e}")
+            except Exception:
+                logger.exception("DM item isleme hatasi")
                 continue
 
         return render_template('dm_result.html', results=results, date_str=datetime_str)
@@ -227,5 +235,6 @@ def dm_analiz():
         error_msg = str(e).encode('utf-8', 'replace').decode('utf-8')
         return render_template('dm_result.html', error=f'API isteği başarısız: {error_msg}')
     except Exception as e:
+        logger.exception("DM analiz beklenmeyen hata")
         error_msg = str(e).encode('utf-8', 'replace').decode('utf-8')
         return render_template('dm_result.html', error=f'Beklenmeyen bir hata oluştu: {error_msg}')

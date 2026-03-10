@@ -7,6 +7,9 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
             const errorMessage = document.getElementById('errorMessage');
             const kullaniciAdi = document.getElementById('kullanici_adi').value;
             const sifre = document.getElementById('sifre').value;
+            const deviceId = document.getElementById('device_id').value;
+            const androidId = document.getElementById('android_id').value;
+            const userAgent = document.getElementById('user_agent').value;
             
             // Buton ve mesajları güncelle
             submitBtn.disabled = true;
@@ -19,6 +22,9 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
                 const formData = new FormData();
                 formData.append('kullanici_adi', kullaniciAdi);
                 formData.append('sifre', sifre);
+                formData.append('device_id', deviceId);
+                formData.append('android_id', androidId);
+                formData.append('user_agent', userAgent);
                 
                 const response = await fetch('/giris_yaps', {
                     method: 'POST',
@@ -26,10 +32,14 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
                 });
                 
                 const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.message || 'Eksik veya hatalı form verisi');
+                }
                 
                 loadingMessage.style.display = 'none';
                 
-                if (data.token && data.android_id_yeni) {
+                if (data.success && data.token && data.android_id) {
                     // Başarılı
                     successMessage.style.display = 'block';
                     document.getElementById('successText').textContent = 'Token başarıyla alındı! Ana sayfaya yönlendiriliyorsunuz...';
@@ -44,7 +54,7 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
             } catch (error) {
                 loadingMessage.style.display = 'none';
                 errorMessage.style.display = 'block';
-                document.getElementById('errorText').textContent = 'Giriş başarısız! Kullanıcı adı veya şifrenizi kontrol edin.';
+                document.getElementById('errorText').textContent = error.message || 'Giriş başarısız! Bilgilerinizi kontrol edin.';
                 
                 // Butonu tekrar aktif et
                 submitBtn.disabled = false;

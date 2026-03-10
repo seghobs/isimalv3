@@ -55,8 +55,8 @@ def save_tokens(tokens):
         c.execute("DELETE FROM accounts")
         
         for acc in tokens_list:
-            # device_id yoksa otomatik üret (mevcut hesaplar için)
-            device_id = acc.get('device_id') or str(uuid.uuid4())
+            # cihaz kimliklerini zorunlu olarak kullan/kaydet
+            device_id = acc.get('device_id', '')
             
             c.execute('''
                 INSERT INTO accounts 

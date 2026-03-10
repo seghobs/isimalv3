@@ -4,8 +4,47 @@ from curl_cffi import requests
 from modules.instagram_api import get_comment_usernames, get_likers
 from modules.donustur import donustur
 from modules.token_utils import load_tokens
+from urllib.parse import urlparse
+import socket
+import ipaddress
 
 main_bp = Blueprint('main', __name__)
+
+ALLOWED_IMAGE_HOSTS = {
+    'cdninstagram.com',
+    'fbcdn.net',
+    'instagram.com',
+}
+
+
+def _is_public_ip(hostname):
+    try:
+        infos = socket.getaddrinfo(hostname, None)
+        for info in infos:
+            ip = ipaddress.ip_address(info[4][0])
+            if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved or ip.is_multicast:
+                return False
+        return True
+    except Exception:
+        return False
+
+
+def _is_allowed_image_url(url):
+    try:
+        parsed = urlparse(url)
+        if parsed.scheme != 'https':
+            return False
+        if not parsed.hostname or parsed.username or parsed.password:
+            return False
+
+        host = parsed.hostname.lower()
+        allowed_domain = any(host == d or host.endswith(f'.{d}') for d in ALLOWED_IMAGE_HOSTS)
+        if not allowed_domain:
+            return False
+
+        return _is_public_ip(host)
+    except Exception:
+        return False
 
 @main_bp.route('/')
 def index():
@@ -91,7 +130,10 @@ def begeni_analiz():
 @main_bp.route('/profile_picture')
 def profile_picture():
     """Profil fotoğrafı proxy (CORS bypass)"""
-    url = request.args.get('url')
+    url = (request.args.get('url') or '').strip()
+    if not url or not _is_allowed_image_url(url):
+        return jsonify({"error": "Geçersiz veya izin verilmeyen görsel URL'i"}), 400
+
     try:
         response = requests.get(url, timeout=15, impersonate="chrome110")
         response.raise_for_status()

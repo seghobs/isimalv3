@@ -10,8 +10,7 @@ def donustur(link_gir):
 
         return numeric_id
 
-    # Example usage with user input for a single link:
-    link = link_gir
+    link = (link_gir or '').strip()
 
     # Extract shortcode from the link
     match = re.search(r'https://www\.instagram\.com/(?:p|reel)/([^/]+)/?', link)
@@ -23,6 +22,7 @@ def donustur(link_gir):
         print(f"Numeric Media ID: {numeric_media_id}")
     else:
         print("Invalid Instagram link.")
+        return None
 
 
     return numeric_media_id

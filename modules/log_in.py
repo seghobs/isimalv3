@@ -2,35 +2,26 @@ import json
 import re
 import time
 from curl_cffi import requests
-import uuid
-import os
-from modules.androidid import *
-import random
 
-def giris_yap(username, password):
-    android_id_yeni = android_id()
-    current_timestamp = time.time()  # Şu anki zaman damgasını al
+def giris_yap(username, password, device_id=None, android_id=None, user_agent=None):
+    """
+    Instagram'a giriş yap.
+    device_id, android_id ve user_agent zorunludur.
+    Bu değerler otomatik üretilmez; sadece kullanıcıdan gelen değerler kullanılır.
+    """
+    if not device_id or not android_id or not user_agent:
+        print("[HATA] Cihaz bilgileri (device_id, android_id, user_agent) eksik!")
+        return None, None, None, None
 
+    android_id_yeni = android_id
+    random_uuid_str = device_id
+    selected_user_agent = user_agent
+    current_timestamp = time.time()
 
-    # user_agent.json dosyasını oku
-    user_agent_file = os.path.join(os.path.dirname(__file__), 'user_agent.json')
-    with open(user_agent_file, 'r', encoding='utf-8') as file:
-        user_agents = json.load(file)
-
-    # Rastgele bir user agent seç
-    selected_user_agent = random.choice(user_agents)
-
-    print("Seçilen rastgele user agent:", selected_user_agent)
-
-    # Belirli aralıkta rasgele ondalık sayı oluşturma
-    min_value = 3.0090323460153e13
-    max_value = 6.0090341600154e13
-    random_decimal = random.uniform(min_value, max_value)
-    #print("Rastgele Ondalık Sayı:", random_decimal)
+    print("Kullanılan user agent:", selected_user_agent[:60], "...")
 
     nav_chain = f'SelfFragment:self_profile:2:main_profile:{current_timestamp:.3f}::,ProfileMediaTabFragment:self_profile:3:button:{current_timestamp+0.287:.3f}::,SettingsScreenFragment:ig_settings:4:button:{current_timestamp+2.284:.3f}::,com.bloks.www.caa.login.aymh_single_profile_screen_entry:com.bloks.www.caa.login.aymh_single_profile_screen_entry:6:button:{current_timestamp+0.308:.3f}::'
-    random_uuid = uuid.uuid4()
-    random_uuid_str = str(random_uuid)
+    
     headers = {
         'x-ig-app-locale': 'tr_TR',
         'x-ig-device-locale': 'tr_TR',
@@ -140,7 +131,7 @@ def giris_yap(username, password):
         yeni = response.json()
     except Exception as e:
         print(f"JSON Parse Hatası: {e}")
-        return None, android_id_yeni, selected_user_agent
+        return None, android_id_yeni, selected_user_agent, random_uuid_str
 
     # Bearer token'ını bulmak için fonksiyon
     def find_bearer_token(data):

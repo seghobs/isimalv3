@@ -68,12 +68,18 @@ class TokenManager:
                 return account
         return None
     
-    def add_account(self, username, password, auto_login=True):
+    def add_account(self, username, password, device_id, android_id, user_agent, auto_login=True):
         """Yeni hesap ekle ve login yap"""
         try:
             if auto_login:
                 # Instagram'a giriş yap
-                token, android_id, user_agent, device_id = giris_yap(username, password)
+                token, android_id, user_agent, device_id = giris_yap(
+                    username, 
+                    password,
+                    device_id=device_id,
+                    android_id=android_id,
+                    user_agent=user_agent
+                )
                 
                 if not token:
                     return {"success": False, "error": "Token alınamadı"}
@@ -284,32 +290,41 @@ class TokenManager:
             return {"success": False, "error": str(e), "is_valid": False}
     
     def refresh_token(self, account_id):
-        """Token'ı yenile (yeniden login)"""
+        """Token'ı yenile (yeniden login) - Cihaz kimliği KORUNUR, sadece token yenilenir"""
         account = self.get_account_by_id(account_id)
         if not account:
             return {"success": False, "error": "Hesap bulunamadı"}
         
         try:
-            token, android_id, user_agent, device_id = giris_yap(
+            # Mevcut cihaz kimliğini kaydet (DEĞIŞTIRILMEYECEK)
+            old_android_id = account.get("android_id", "")
+            old_device_id  = account.get("device_id", "")
+            old_user_agent = account.get("user_agent", "")
+
+            token, _new_android, _new_ua, _new_device = giris_yap(
                 account["username"],
-                account["password"]
+                account["password"],
+                device_id=old_device_id,
+                android_id=old_android_id,
+                user_agent=old_user_agent
             )
             
             if not token:
                 return {"success": False, "error": "Token yenilenemedi"}
             
-            # Token'ı güncelle
+            # Sadece token'ı güncelle — android_id, device_id, user_agent ESKİSİ KORUNUR
             for acc in self.tokens["accounts"]:
                 if acc["id"] == account_id:
                     acc["token"] = token
-                    acc["android_id"] = android_id
-                    acc["android_id_yeni"] = android_id
-                    acc["device_id"] = device_id
-                    acc["user_agent"] = user_agent
-                    acc["login_date"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    acc["last_check"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    acc["is_valid"] = True
-                    acc["is_active"] = True
+                    # Eski cihaz kimliklerini koru (Instagram'ın bizi tanıması için)
+                    acc["android_id"]      = old_android_id
+                    acc["android_id_yeni"] = old_android_id
+                    acc["device_id"]       = old_device_id
+                    acc["user_agent"]      = old_user_agent
+                    acc["login_date"]  = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    acc["last_check"]  = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    acc["is_valid"]    = True
+                    acc["is_active"]   = True
                     # Logout bilgilerini temizle
                     acc.pop("logout_reason", None)
                     acc.pop("logout_time", None)
@@ -317,7 +332,7 @@ class TokenManager:
             
             self.save_tokens()
             
-            return {"success": True, "message": "Token yenilendi", "token": token}
+            return {"success": True, "message": "Token yenilendi (cihaz kimliği korundu)", "token": token}
         
         except Exception as e:
             return {"success": False, "error": str(e)}

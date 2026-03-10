@@ -1,13 +1,94 @@
 import json
+import logging
+import os
+import sqlite3
 from flask import Blueprint, request, render_template, jsonify, session, redirect, url_for
 from datetime import datetime
 from curl_cffi import requests as req
+from werkzeug.security import generate_password_hash, check_password_hash
 from modules.token_utils import load_tokens, save_tokens, validate_token
 from modules.log_in import giris_yap
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
+logger = logging.getLogger(__name__)
 
-ADMIN_PASSWORD = 'seho'  # Admin şifresi
+BASE_DIR = os.path.dirname(os.path.dirname(__file__))
+DB_FILE = os.path.join(BASE_DIR, 'tokens.db')
+ADMIN_PASSWORD_KEY = 'admin_password_hash'
+
+
+def _get_db_connection():
+    return sqlite3.connect(DB_FILE)
+
+
+def _ensure_admin_settings_table():
+    conn = _get_db_connection()
+    try:
+        c = conn.cursor()
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS app_settings (
+                key TEXT PRIMARY KEY,
+                value TEXT NOT NULL,
+                updated_at TEXT
+            )
+        ''')
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def _ensure_default_admin_password():
+    _ensure_admin_settings_table()
+    conn = _get_db_connection()
+    try:
+        c = conn.cursor()
+        c.execute('SELECT value FROM app_settings WHERE key = ?', (ADMIN_PASSWORD_KEY,))
+        row = c.fetchone()
+        if not row:
+            c.execute(
+                'INSERT INTO app_settings (key, value, updated_at) VALUES (?, ?, ?)',
+                (ADMIN_PASSWORD_KEY, generate_password_hash('seho'), str(datetime.now()))
+            )
+            conn.commit()
+    finally:
+        conn.close()
+
+
+def _verify_admin_password(raw_password):
+    _ensure_admin_settings_table()
+    conn = _get_db_connection()
+    try:
+        c = conn.cursor()
+        c.execute('SELECT value FROM app_settings WHERE key = ?', (ADMIN_PASSWORD_KEY,))
+        row = c.fetchone()
+        if not row:
+            return False
+        return check_password_hash(row[0], raw_password or '')
+    finally:
+        conn.close()
+
+
+def _set_admin_password(raw_password):
+    _ensure_admin_settings_table()
+    conn = _get_db_connection()
+    try:
+        c = conn.cursor()
+        c.execute(
+            '''
+            INSERT INTO app_settings (key, value, updated_at)
+            VALUES (?, ?, ?)
+            ON CONFLICT(key) DO UPDATE SET
+                value=excluded.value,
+                updated_at=excluded.updated_at
+            ''',
+            (ADMIN_PASSWORD_KEY, generate_password_hash(raw_password), str(datetime.now()))
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+_ensure_default_admin_password()
 
 @admin_bp.route('/')
 def admin_panel():
@@ -21,7 +102,7 @@ def admin_login():
     """Admin giriş sayfası"""
     if request.method == 'POST':
         password = request.form.get('password')
-        if password == ADMIN_PASSWORD:
+        if _verify_admin_password(password):
             session['admin_logged_in'] = True
             return redirect(url_for('admin.admin_panel'))
         else:
@@ -49,6 +130,7 @@ def get_tokens():
             'tokens': tokens     # Geriye dönük uyumluluk için
         })
     except Exception as e:
+        logger.exception("Admin get_tokens failed")
         return jsonify({
             'success': False,
             'message': f'Tokenler yüklenemedi: {str(e)}'
@@ -61,14 +143,14 @@ def add_token():
         return jsonify({'success': False, 'message': 'Yetkisiz erişim'}), 401
     
     try:
-        data = request.get_json()
+        data = request.get_json(silent=True) or {}
         
-        # Sadece token, android_id ve user_agent gerekli
-        required_fields = ['token', 'android_id', 'user_agent']
-        if not all(field in data for field in required_fields):
+        # Sadece token, device_id, android_id ve user_agent gerekli
+        required_fields = ['token', 'device_id', 'android_id', 'user_agent']
+        if not all(field in data for field in required_fields) or not data['device_id']:
             return jsonify({
                 'success': False,
-                'message': 'Eksik alan (token, android_id, user_agent gerekli)'
+                'message': 'Eksik alan (token, device_id, android_id, user_agent gerekli)'
             }), 400
         
         # Token'dan kullanıcı adını çek
@@ -119,7 +201,7 @@ def add_token():
             'password': data.get('password', ''),
             'token': data['token'],
             'android_id_yeni': data['android_id'],
-            'device_id': data.get('device_id', ''),  # Manuel girilen device_id
+            'device_id': data['device_id'],
             'user_agent': data['user_agent'],
             'is_active': data.get('is_active', True),
             'is_valid': True,
@@ -142,6 +224,7 @@ def add_token():
             'full_name': full_name
         })
     except Exception as e:
+        logger.exception("Admin add_token failed")
         return jsonify({
             'success': False,
             'message': f'Token eklenemedi: {str(e)}'
@@ -154,7 +237,7 @@ def delete_token():
         return jsonify({'success': False, 'message': 'Yetkisiz erişim'}), 401
     
     try:
-        data = request.get_json()
+        data = request.get_json(silent=True) or {}
         username = data.get('username')
         
         if not username:
@@ -172,6 +255,7 @@ def delete_token():
             'message': f'{username} için token silindi'
         })
     except Exception as e:
+        logger.exception("Admin delete_token failed")
         return jsonify({
             'success': False,
             'message': f'Token silinemedi: {str(e)}'
@@ -184,7 +268,7 @@ def toggle_token():
         return jsonify({'success': False, 'message': 'Yetkisiz erişim'}), 401
     
     try:
-        data = request.get_json()
+        data = request.get_json(silent=True) or {}
         username = data.get('username')
         
         if not username:
@@ -216,6 +300,7 @@ def toggle_token():
             'message': 'Token bulunamadı'
         }), 404
     except Exception as e:
+        logger.exception("Admin toggle_token failed")
         return jsonify({
             'success': False,
             'message': f'Token durumu değiştirilemedi: {str(e)}'
@@ -228,13 +313,13 @@ def update_token():
         return jsonify({'success': False, 'message': 'Yetkisiz erişim'}), 401
     
     try:
-        data = request.get_json()
+        data = request.get_json(silent=True) or {}
         
-        required_fields = ['username', 'token', 'android_id', 'user_agent']
-        if not all(field in data for field in required_fields):
+        required_fields = ['username', 'token', 'device_id', 'android_id', 'user_agent']
+        if not all(field in data for field in required_fields) or not data['device_id']:
             return jsonify({
                 'success': False,
-                'message': 'Eksik alan'
+                'message': 'Eksik alan (username, token, device_id, android_id, user_agent gerekli)'
             }), 400
         
         username = data['username']
@@ -247,8 +332,7 @@ def update_token():
             if token['username'] == username:
                 token['token'] = data['token']
                 token['android_id_yeni'] = data['android_id']
-                if data.get('device_id'):  # Eğer yeni device_id girilmişse güncelle
-                    token['device_id'] = data['device_id']
+                token['device_id'] = data['device_id']
                 token['user_agent'] = data['user_agent']
                 
                 # Yeni token'ı doğrula ve asıl kullanıcı adını çekerek veriyi düzelt
@@ -270,8 +354,8 @@ def update_token():
                             token['full_name'] = user_info.get('full_name', '')
                         token['is_active'] = True
                         token['is_valid'] = True
-                except Exception as e:
-                    print(f"Update token validation error: {e}")
+                except Exception:
+                    logger.exception("Admin update_token validation failed")
                     
                 # Logout bilgilerini temizle (yeni token girildi)
                 token.pop('logout_reason', None)
@@ -280,7 +364,7 @@ def update_token():
                 target_token = token
                 break
         
-        if not token_found:
+        if not token_found or not target_token:
             return jsonify({
                 'success': False,
                 'message': 'Token bulunamadı'
@@ -288,7 +372,7 @@ def update_token():
         
         save_tokens(tokens)
         
-        is_active_now = target_token.get('is_active', False)
+        is_active_now = bool(target_token.get('is_active', False))
         status_msg = "ve otomatik olarak AKTİF edildi!" if is_active_now else "ancak token geçersiz göründüğü için pasif bırakıldı."
         
         return jsonify({
@@ -296,6 +380,7 @@ def update_token():
             'message': f'@{username} için token başarıyla güncellendi {status_msg}'
         })
     except Exception as e:
+        logger.exception("Admin update_token failed")
         return jsonify({
             'success': False,
             'message': f'Token güncellenemedi: {str(e)}'
@@ -308,7 +393,7 @@ def relogin_token():
         return jsonify({'success': False, 'message': 'Yetkisiz erişim'}), 401
     
     try:
-        data = request.get_json()
+        data = request.get_json(silent=True) or {}
         username = data.get('username')
         
         if not username:
@@ -339,7 +424,13 @@ def relogin_token():
         
         # Tekrar giriş yap
         try:
-            new_token, new_android_id, new_user_agent, new_device_id = giris_yap(username, target_token['password'])
+            new_token, new_android_id, new_user_agent, new_device_id = giris_yap(
+                username, 
+                target_token['password'],
+                device_id=target_token.get('device_id'),
+                android_id=target_token.get('android_id_yeni') or target_token.get('android_id'),
+                user_agent=target_token.get('user_agent')
+            )
             
             if not new_token:
                 return jsonify({
@@ -366,12 +457,14 @@ def relogin_token():
             })
             
         except Exception as e:
+            logger.exception("Admin relogin_token failed during login")
             return jsonify({
                 'success': False,
                 'message': f'Giriş hatası: {str(e)}'
             }), 500
             
     except Exception as e:
+        logger.exception("Admin relogin_token failed")
         return jsonify({
             'success': False,
             'message': f'Tekrar giriş yapılamadı: {str(e)}'
@@ -384,7 +477,7 @@ def validate_token_route():
         return jsonify({'success': False, 'message': 'Yetkisiz erişim'}), 401
     
     try:
-        data = request.get_json()
+        data = request.get_json(silent=True) or {}
         username = data.get('username')
         
         if not username:
@@ -416,7 +509,43 @@ def validate_token_route():
             'message': 'Token bulunamadı'
         }), 404
     except Exception as e:
+        logger.exception("Admin validate_token failed")
         return jsonify({
             'success': False,
             'message': f'Token doğrulanamadı: {str(e)}'
         }), 500
+
+
+@admin_bp.route('/change_password', methods=['POST'])
+def change_password():
+    """Admin şifresini değiştir"""
+    if not session.get('admin_logged_in'):
+        return jsonify({'success': False, 'message': 'Yetkisiz erişim'}), 401
+
+    try:
+        data = request.get_json(silent=True) or {}
+        current_password = (data.get('current_password') or '').strip()
+        new_password = (data.get('new_password') or '').strip()
+        new_password_confirm = (data.get('new_password_confirm') or '').strip()
+
+        if not current_password or not new_password or not new_password_confirm:
+            return jsonify({'success': False, 'message': 'Tüm şifre alanları zorunludur'}), 400
+
+        if len(new_password) < 4:
+            return jsonify({'success': False, 'message': 'Yeni şifre en az 4 karakter olmalı'}), 400
+
+        if new_password != new_password_confirm:
+            return jsonify({'success': False, 'message': 'Yeni şifreler eşleşmiyor'}), 400
+
+        if not _verify_admin_password(current_password):
+            return jsonify({'success': False, 'message': 'Mevcut şifre hatalı'}), 400
+
+        if current_password == new_password:
+            return jsonify({'success': False, 'message': 'Yeni şifre mevcut şifreyle aynı olamaz'}), 400
+
+        _set_admin_password(new_password)
+
+        return jsonify({'success': True, 'message': 'Admin şifresi başarıyla güncellendi'})
+    except Exception as e:
+        logger.exception("Admin change_password failed")
+        return jsonify({'success': False, 'message': f'Şifre değiştirilemedi: {str(e)}'}), 500

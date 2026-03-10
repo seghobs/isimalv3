@@ -1,4 +1,6 @@
 from flask import Flask
+import logging
+import flask.cli
 from modules.admin import admin_bp
 from modules.auth import auth_bp
 from modules.main_routes import main_bp
@@ -14,4 +16,9 @@ app.register_blueprint(main_bp)
 app.register_blueprint(dm_bp)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    flask.cli.show_server_banner = lambda *args, **kwargs: None
+    logging.getLogger('werkzeug').setLevel(logging.ERROR)
+    host = '127.0.0.1'
+    port = 5000
+    print(f"Server basladi. Su adresten ulasabilirsiniz: http://{host}:{port}")
+    app.run(host=host, port=port, debug=False, use_reloader=False)

@@ -24,6 +24,28 @@
         <div id="alertContainer"></div>
 
         <div class="add-token-section">
+            <h2><i class="fas fa-key"></i> Admin Şifresi Değiştir</h2>
+            <form id="changePasswordForm">
+                <div class="form-group">
+                    <label for="current_password"><i class="fas fa-lock"></i> Mevcut Şifre</label>
+                    <input type="password" id="current_password" name="current_password" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="new_password"><i class="fas fa-shield-alt"></i> Yeni Şifre</label>
+                    <input type="password" id="new_password" name="new_password" required minlength="4">
+                </div>
+
+                <div class="form-group">
+                    <label for="new_password_confirm"><i class="fas fa-check-circle"></i> Yeni Şifre (Tekrar)</label>
+                    <input type="password" id="new_password_confirm" name="new_password_confirm" required minlength="4">
+                </div>
+
+                <button type="submit" class="btn"><i class="fas fa-save"></i> Şifreyi Güncelle</button>
+            </form>
+        </div>
+
+        <div class="add-token-section">
             <h2><i class="fas fa-plus-circle"></i> Yeni Token Ekle</h2>
             <p style="color: rgba(255, 255, 255, 0.7); font-size: 14px; margin-bottom: 15px;">
                 <i class="fas fa-info-circle"></i> Token girildiğinde hangi hesaba ait olduğu otomatik algılanacaktır.
@@ -40,13 +62,11 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="device_id"><i class="fas fa-fingerprint"></i> Device ID (UUID) <small
-                            style="color:rgba(255,255,255,0.4);">(Opsiyonel)</small></label>
-                    <input type="text" id="device_id" name="device_id"
+                    <label for="device_id"><i class="fas fa-fingerprint"></i> Device ID (UUID)</label>
+                    <input type="text" id="device_id" name="device_id" required
                         placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
                     <small style="color: rgba(255, 255, 255, 0.5); font-size: 12px; display: block; margin-top: 5px;">
-                        <i class="fas fa-info-circle"></i> Boş bırakırsanız otomatik UUID oluşturulur. Hesabın gerçek
-                        Device ID'sini girin.
+                        <i class="fas fa-info-circle"></i> Hesabın gerçek Device ID'sini girin.
                     </small>
                 </div>
 
@@ -108,12 +128,11 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="edit_device_id"><i class="fas fa-fingerprint"></i> Device ID (UUID) <small
-                            style="color:rgba(255,255,255,0.4);">(Opsiyonel)</small></label>
-                    <input type="text" id="edit_device_id" name="device_id"
+                    <label for="edit_device_id"><i class="fas fa-fingerprint"></i> Device ID (UUID)</label>
+                    <input type="text" id="edit_device_id" name="device_id" required
                         placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
                     <small style="color: rgba(255, 255, 255, 0.5); font-size: 12px; display: block; margin-top: 5px;">
-                        <i class="fas fa-info-circle"></i> Boş bırakırsanız mevcut değer korunur.
+                        <i class="fas fa-info-circle"></i> Tokenin gerçek Device ID'sini buraya girin.
                     </small>
                 </div>
 

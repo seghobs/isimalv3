@@ -1,7 +1,10 @@
 import time
+import logging
 from curl_cffi import requests
 from modules.token_manager import token_manager
 from modules.token_utils import load_tokens, save_tokens
+
+logger = logging.getLogger(__name__)
 
 
 def _mark_token_inactive(current_username, token_manager_ref):
@@ -17,7 +20,7 @@ def _mark_token_inactive(current_username, token_manager_ref):
         token_manager_ref.reload()
         print(f"Token pasif yapıldı: @{current_username}")
     except Exception as te:
-        print(f"Token pasif yapma hatası: {te}")
+        logger.exception("Token pasif yapma hatasi")
 
 
 def get_comment_usernames(media_id):
@@ -146,8 +149,8 @@ def get_comment_usernames(media_id):
                 print(f"Başarı! Toplam {len(usernames)} yorum yapan kullanıcı bulundu.")
                 return usernames
 
-        except Exception as e:
-            print(f"Hata oluştu: {e}")
+        except Exception:
+            logger.exception("Yorum cekme hatasi")
             token_valid = False
 
         # Failover: Sonraki token'a geç
@@ -259,8 +262,8 @@ def get_likers(media_id):
                 print(f"Başarı! Toplam {len(all_likers)} beğeni bulundu.")
                 return all_likers
 
-        except Exception as e:
-            print(f"Beğeni çekme hatası: {e}")
+        except Exception:
+            logger.exception("Begeni cekme hatasi")
             token_valid = False
 
         # Failover: Sonraki token'a geç
